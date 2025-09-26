@@ -15,8 +15,8 @@ use crate::InCBProperty;
 /// of advanced text shaping anyway, so clusters over a certain length cannot be
 /// rendered anyway and so in that case we just want to find the beginning of
 /// the next cluster so we can know when to stop discarding overlong input.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum State {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum State {
     /// The initial state at the beginning of the text or when the following
     /// should be treated as if it were at the beginning of the text.
     Base,
@@ -45,6 +45,19 @@ pub enum State {
 }
 
 impl State {
+    /// Const-compatible `Eq`.
+    pub const fn eq(self, other: Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::Base, Self::Base)
+                | (Self::AwaitEmojiFlag, Self::AwaitEmojiFlag)
+                | (Self::GB11BeforeZWJ, Self::GB11BeforeZWJ)
+                | (Self::GB11AfterZWJ, Self::GB11AfterZWJ)
+                | (Self::GB9cConsonant, Self::GB9cConsonant)
+                | (Self::GB9cLinker, Self::GB9cLinker)
+        )
+    }
+
     /// Given the previous category and the next category, returns whether
     /// there is a grapheme cluster boundary between two characters of those
     /// categories in the current state, and the state that should be used for

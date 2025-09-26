@@ -130,7 +130,7 @@ pub use u8char::u8char;
 /// byte. Each newly-submitted character therefore updates the record of
 /// the most recent character and advances the internal state machine based
 /// on the new character.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GraphemeMachine {
     state: State,
     prev: Option<CharProperties>,
@@ -256,10 +256,20 @@ impl GraphemeMachine {
         self.prev = None;
         ClusterAction::Split
     }
+
+    /// Const-compatible `Eq`.
+    pub const fn eq(self, other: Self) -> bool {
+        self.state.eq(other.state)
+            && match (self.prev, other.prev) {
+                (Some(prev), Some(other_prev)) => prev.eq(other_prev),
+                (None, None) => true,
+                _ => false,
+            }
+    }
 }
 
 /// What to do with a new character after presenting it to a [GraphemeMachine].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ClusterAction {
     /// Treat the new character as an extension of the current grapheme cluster.
     Continue,
@@ -267,9 +277,19 @@ pub enum ClusterAction {
     /// that initially consists only of the new character.
     Split,
 }
+impl ClusterAction {
+    /// Const-compatible `Eq`.
+    pub const fn eq(self, other: Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::Continue, Self::Continue) | (Self::Split, Self::Split)
+        )
+    }
+}
 
 /// An iterator over characters of type either u8char or char.
 #[doc(hidden)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct IterChar<'a, T> {
     machine: &'a mut GraphemeMachine,
     remain: &'a str,

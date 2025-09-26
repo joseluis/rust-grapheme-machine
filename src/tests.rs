@@ -89,3 +89,24 @@ fn next_chars_from_str() {
         ]
     );
 }
+#[test]
+const fn const_iter() {
+    const INPUT: &str = "Hello!\r\nBeep 🧑‍🌾";
+    const CHAR: char = const {
+        let mut machine = GraphemeMachine::new();
+        let mut iter = machine.next_chars_from_str(INPUT);
+
+        let mut c = '\0';
+        let mut i = 0;
+        while i < 9 {
+            i += 1;
+            if let Some((cluster, character)) = iter.next() {
+                if cluster.eq(ClusterAction::Split) {
+                    c = character;
+                }
+            }
+        }
+        c
+    };
+    assert![CHAR == 'B'];
+}

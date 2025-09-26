@@ -14,7 +14,7 @@ mod table;
 /// they are an implementation detail subject to change in future versions of
 /// this library.
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GCBProperty {
     /// Represents that none of the grapheme cluster break property values
     /// apply to a particular character at all.
@@ -34,6 +34,29 @@ pub enum GCBProperty {
     V = 0x0d,
     ZWJ = 0x0e,
 }
+impl GCBProperty {
+    /// Const-compatible `Eq`.
+    pub const fn eq(self, other: Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::None, Self::None)
+                | (Self::CR, Self::CR)
+                | (Self::Control, Self::Control)
+                | (Self::Extend, Self::Extend)
+                | (Self::ExtendedPictographic, Self::ExtendedPictographic)
+                | (Self::L, Self::L)
+                | (Self::LF, Self::LF)
+                | (Self::LV, Self::LV)
+                | (Self::LVT, Self::LVT)
+                | (Self::Prepend, Self::Prepend)
+                | (Self::RegionalIndicator, Self::RegionalIndicator)
+                | (Self::SpacingMark, Self::SpacingMark)
+                | (Self::T, Self::T)
+                | (Self::V, Self::V)
+                | (Self::ZWJ, Self::ZWJ)
+        )
+    }
+}
 
 /// Enumeration of **Indic_Conjunct_Break** property values, as defined in
 /// DerivedCoreProperties.txt based on
@@ -46,7 +69,7 @@ pub enum GCBProperty {
 /// they are an implementation detail subject to change in future versions of
 /// this library.
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InCBProperty {
     /// Represents that none of the Indic_Conjunct_Break property values
     /// apply to a particular character at all.
@@ -54,6 +77,18 @@ pub enum InCBProperty {
     Consonant = 0x10,
     Extend = 0x20,
     Linker = 0x30,
+}
+impl InCBProperty {
+    /// Const-compatible `Eq`.
+    pub const fn eq(self, other: Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::None, Self::None)
+                | (Self::Consonant, Self::Consonant)
+                | (Self::Extend, Self::Extend)
+                | (Self::Linker, Self::Linker)
+        )
+    }
 }
 
 /// Represents selections from the two derived Unicode character properties
@@ -66,7 +101,7 @@ pub enum InCBProperty {
 /// are defined in terms of both sets of property values, and so this type
 /// serves as a compact tuple of one selection from each.
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CharProperties {
     /// Bitfield representation of the property tuple. The enum values
     /// of [`GCBProperty`] and [`InCBProperty`] are defined such that one
@@ -136,6 +171,11 @@ impl CharProperties {
             self.gcb_property(),
             GCBProperty::LF | GCBProperty::CR | GCBProperty::Control,
         )
+    }
+
+    /// Const-compatible `Eq`.
+    pub const fn eq(self, other: Self) -> bool {
+        self.raw == other.raw
     }
 }
 
