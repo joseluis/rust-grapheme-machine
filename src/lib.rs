@@ -214,7 +214,11 @@ impl GraphemeMachine {
     /// input in a series of [`str`] chunks even if there are grapheme
     /// clusters straddling across the buffer boundaries.
     pub const fn next_u8chars_from_str<'a>(&'a mut self, s: &'a str) -> IterChar<'a, u8char> {
-        IterChar::<u8char> { machine: self, remain: s, _marker: PhantomData }
+        IterChar::<u8char> {
+            machine: self,
+            remain: s,
+            _marker: PhantomData,
+        }
     }
 
     /// Behaves the same as [`Self::next_u8chars_from_str`] except that it
@@ -222,7 +226,11 @@ impl GraphemeMachine {
     /// by callers who are interacting with something that only supports
     /// Rust's standard character representation.
     pub const fn next_chars_from_str<'a>(&'a mut self, s: &'a str) -> IterChar<'a, char> {
-        IterChar::<char> { machine: self, remain: s, _marker: PhantomData }
+        IterChar::<char> {
+            machine: self,
+            remain: s,
+            _marker: PhantomData,
+        }
     }
 
     /// Tells the state machine that the input stream has ended.
@@ -260,7 +268,6 @@ pub enum ClusterAction {
     Split,
 }
 
-
 /// An iterator over characters of type either u8char or char.
 #[doc(hidden)]
 pub struct IterChar<'a, T> {
@@ -271,7 +278,9 @@ pub struct IterChar<'a, T> {
 impl<'a> IterChar<'a, u8char> {
     pub const fn next(&mut self) -> Option<(ClusterAction, u8char)> {
         let (next, rest) = u8char::from_string_prefix(self.remain);
-        let Some(next) = next else { return None; };
+        let Some(next) = next else {
+            return None;
+        };
         let action = self.machine.next_u8char(next);
         self.remain = rest;
         Some((action, next))
@@ -288,7 +297,9 @@ impl<'a> FusedIterator for IterChar<'a, u8char> {}
 impl<'a> IterChar<'a, char> {
     pub const fn next(&mut self) -> Option<(ClusterAction, char)> {
         let (next, rest) = u8char::from_string_prefix(self.remain);
-        let Some(next) = next else { return None; };
+        let Some(next) = next else {
+            return None;
+        };
         let action = self.machine.next_u8char(next);
         self.remain = rest;
         Some((action, next.to_char()))

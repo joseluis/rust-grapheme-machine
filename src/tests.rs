@@ -1,15 +1,15 @@
-use super::*;
+use super::{ClusterAction, GraphemeMachine};
 
 // The tests in this file are only for the public-facing `GraphemeCluster`
 // API. The internal state machine implementation has its own tests under
 // `crate::state::tests`, where most of the interesting testing happens.
 
 use pretty_assertions::assert_eq;
+#[rustfmt::skip]
+use ::u8char::AsU8Chars;
 
 #[test]
 fn basics() {
-    use ::u8char::AsU8Chars;
-
     let mut clusters: Vec<String> = Vec::new();
     let mut current_cluster = String::new();
     let mut machine = GraphemeMachine::new();
@@ -50,8 +50,6 @@ fn basics() {
 
 #[test]
 fn end_of_input() {
-    use ::u8char::AsU8Chars;
-
     let mut machine = GraphemeMachine::new();
     let input = "Hello!\r\nBeep 🧑‍🌾";
 
