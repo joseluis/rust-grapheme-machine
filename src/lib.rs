@@ -101,12 +101,12 @@
 mod properties;
 mod state;
 
-use core::iter::FusedIterator;
+use core::{iter::FusedIterator, marker::PhantomData};
 
 pub use properties::*;
 
 use state::State;
-use u8char::u8char;
+pub use u8char::u8char;
 
 /// A finite state machine for detecting grapheme cluster boundaries.
 ///
@@ -213,42 +213,16 @@ impl GraphemeMachine {
     /// end of the string is reached, so it's okay to provide streaming
     /// input in a series of [`str`] chunks even if there are grapheme
     /// clusters straddling across the buffer boundaries.
-    pub const fn next_u8chars_from_str<'a>(
-        &'a mut self,
-        s: &'a str,
-    ) -> impl Iterator<Item = (ClusterAction, u8char)> + FusedIterator + 'a {
-        struct Iter<'a> {
-            machine: &'a mut GraphemeMachine,
-            remain: &'a str,
-        }
-        impl<'a> Iterator for Iter<'a> {
-            type Item = (ClusterAction, u8char);
-            fn next(&mut self) -> Option<Self::Item> {
-                let (next, rest) = u8char::from_string_prefix(self.remain);
-                let Some(next) = next else {
-                    return None;
-                };
-                let action = self.machine.next_u8char(next);
-                self.remain = rest;
-                Some((action, next))
-            }
-        }
-        impl<'a> FusedIterator for Iter<'a> {}
-        Iter {
-            machine: self,
-            remain: s,
-        }
+    pub const fn next_u8chars_from_str<'a>(&'a mut self, s: &'a str) -> IterChar<'a, u8char> {
+        IterChar::<u8char> { machine: self, remain: s, _marker: PhantomData }
     }
 
     /// Behaves the same as [`Self::next_u8chars_from_str`] except that it
     /// also converts the characters to [`char`], for more convenient use
     /// by callers who are interacting with something that only supports
     /// Rust's standard character representation.
-    pub fn next_chars_from_str<'a>(
-        &'a mut self,
-        s: &'a str,
-    ) -> impl Iterator<Item = (ClusterAction, char)> + FusedIterator + 'a {
-        self.next_u8chars_from_str(s).map(|(a, c)| (a, c.to_char()))
+    pub const fn next_chars_from_str<'a>(&'a mut self, s: &'a str) -> IterChar<'a, char> {
+        IterChar::<char> { machine: self, remain: s, _marker: PhantomData }
     }
 
     /// Tells the state machine that the input stream has ended.
@@ -285,6 +259,48 @@ pub enum ClusterAction {
     /// that initially consists only of the new character.
     Split,
 }
+
+
+/// An iterator over characters of type either u8char or char.
+#[doc(hidden)]
+pub struct IterChar<'a, T> {
+    machine: &'a mut GraphemeMachine,
+    remain: &'a str,
+    _marker: PhantomData<T>,
+}
+impl<'a> IterChar<'a, u8char> {
+    pub const fn next(&mut self) -> Option<(ClusterAction, u8char)> {
+        let (next, rest) = u8char::from_string_prefix(self.remain);
+        let Some(next) = next else { return None; };
+        let action = self.machine.next_u8char(next);
+        self.remain = rest;
+        Some((action, next))
+    }
+}
+impl<'a> Iterator for IterChar<'a, u8char> {
+    type Item = (ClusterAction, u8char);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next()
+    }
+}
+impl<'a> FusedIterator for IterChar<'a, u8char> {}
+
+impl<'a> IterChar<'a, char> {
+    pub const fn next(&mut self) -> Option<(ClusterAction, char)> {
+        let (next, rest) = u8char::from_string_prefix(self.remain);
+        let Some(next) = next else { return None; };
+        let action = self.machine.next_u8char(next);
+        self.remain = rest;
+        Some((action, next.to_char()))
+    }
+}
+impl<'a> Iterator for IterChar<'a, char> {
+    type Item = (ClusterAction, char);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next()
+    }
+}
+impl<'a> FusedIterator for IterChar<'a, char> {}
 
 #[cfg(test)]
 mod tests;
