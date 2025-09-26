@@ -139,7 +139,7 @@ pub struct GraphemeMachine {
 impl GraphemeMachine {
     /// Constructs a new [`GraphemeMachine`] in an initial "start of input"
     /// state.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         GraphemeMachine {
             state: State::Base,
             prev: None,
@@ -158,7 +158,7 @@ impl GraphemeMachine {
     /// At the start of input when there is no previous character the action
     /// is always [`ClusterAction::Split`], because there is no current
     /// grapheme cluster to possibly extend.
-    pub fn next_char_properties(&mut self, next: CharProperties) -> ClusterAction {
+    pub const fn next_char_properties(&mut self, next: CharProperties) -> ClusterAction {
         let (boundary, next_state) = self.state.transition(self.prev, next);
         self.state = next_state;
         self.prev = Some(next);
@@ -174,7 +174,7 @@ impl GraphemeMachine {
     ///
     /// Refer to the documentation of that function for information on the
     /// meaning of the result.
-    pub fn next_u8char(&mut self, c: u8char) -> ClusterAction {
+    pub const fn next_u8char(&mut self, c: u8char) -> ClusterAction {
         let props = CharProperties::for_u8char(c);
         self.next_char_properties(props)
     }
@@ -190,7 +190,7 @@ impl GraphemeMachine {
     /// first convert the given character to the `u8char` representation. If
     /// you already have the character in `u8char` form then you can avoid
     /// unnecessary conversions by calling [`Self::next_u8char`] instead.
-    pub fn next_char(&mut self, c: char) -> ClusterAction {
+    pub const fn next_char(&mut self, c: char) -> ClusterAction {
         let props = CharProperties::for_char(c);
         self.next_char_properties(props)
     }
@@ -213,7 +213,7 @@ impl GraphemeMachine {
     /// end of the string is reached, so it's okay to provide streaming
     /// input in a series of [`str`] chunks even if there are grapheme
     /// clusters straddling across the buffer boundaries.
-    pub fn next_u8chars_from_str<'a>(
+    pub const fn next_u8chars_from_str<'a>(
         &'a mut self,
         s: &'a str,
     ) -> impl Iterator<Item = (ClusterAction, u8char)> + FusedIterator + 'a {
@@ -269,7 +269,7 @@ impl GraphemeMachine {
     /// For consistency with the other machine-advancing methods this returns
     /// an action to take, but at the end of input the action is always
     /// [`ClusterAction::Split`] to mark the end of the final grapheme cluster.
-    pub fn end_of_input(&mut self) -> ClusterAction {
+    pub const fn end_of_input(&mut self) -> ClusterAction {
         self.state = State::Base;
         self.prev = None;
         ClusterAction::Split

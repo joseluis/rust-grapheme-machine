@@ -56,7 +56,11 @@ impl State {
     /// Correct use requires that the `prev` of one call equals the `next`
     /// of the previous call that generated the new state. If that is not
     /// upheld then the results are unspecified.
-    pub fn transition(self, prev: Option<CharProperties>, next: CharProperties) -> (bool, State) {
+    pub const fn transition(
+        self,
+        prev: Option<CharProperties>,
+        next: CharProperties,
+    ) -> (bool, State) {
         use GCBProperty::*;
 
         let next_state = self.next_state(next);
